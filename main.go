@@ -7,24 +7,37 @@
 // Notes on fmt Formating, %b is base 2 %o is base 8.
 // Looks like the data is given in unsigned base 8 ints. uint8
 // From 24 byte buffer, bytes 5, 13, and 21 are important.
-
 package main
 
 import "os"
 import "fmt"
+import "os/exec"
 
 func main() {
 	file, err := os.Open("/dev/usb/hiddev0")
 	if err != nil {
 		fmt.Println(err)
 	}
-	data := make([]byte, 24)
+	data := make([]byte, 24) // Buffer for reading file
+
+	cmd := exec.Command("xte", "key XF86AudioPlay")
+
 	for {
-		count, err := file.Read(data)
+		_, err := file.Read(data)
 		if err != nil {
 			fmt.Println(err)
 		}
-		//fmt.Printf("read %d bytes: %q\n\n", count, data[:count])
-		fmt.Printf("Left %b, Center %b, Right %b", data[4], data[12], data[20])
+		switch byte(1) {
+		case data[4]:
+			fmt.Println("Left")
+		case data[12]:
+			fmt.Println("Center")
+			err := cmd.Run()
+			if err != nil {
+				fmt.Println(err)
+			}
+		case data[20]:
+			fmt.Println("Right")
+		}
 	}
 }
