@@ -1,5 +1,6 @@
 // Fenimore Love | Public Domain
-// See Python2 (yuck) driver https://ubuntuforums.org/showthread.php?t=2232673
+// See Python2 driver https://ubuntuforums.org/
+//                           showthread.php?t=2232673
 // Also, some info about Infinity pedal: Vendor id = 05f3
 //                                       Product id = 00ff
 // My infinity pedal outputs to a file in /dev/usb hiddev0
@@ -7,11 +8,15 @@
 // Notes on fmt Formating, %b is base 2 %o is base 8.
 // Looks like the data is given in unsigned base 8 ints. uint8
 // From 24 byte buffer, bytes 5, 13, and 21 are important.
+// Like the python code, use the linux program xte to simulate
+// keystrokes. For archlinux, this is found in the xautomation package.
 package main
 
 import "os"
 import "fmt"
-import "os/exec"
+
+//import "os/exec"
+import "syscall"
 
 func main() {
 	file, err := os.Open("/dev/usb/hiddev0")
@@ -19,8 +24,12 @@ func main() {
 		fmt.Println(err)
 	}
 	data := make([]byte, 24) // Buffer for reading file
+	args := make([]string, 3)
+	args[0] = "xte"
+	args[1] = "key"
+	args[2] = "XF86AudioPlay"
 
-	cmd := exec.Command("xte", "key XF86AudioPlay")
+	//	cmd := exec.Command("xte", "key XF86AudioPlay")
 
 	for {
 		_, err := file.Read(data)
@@ -32,7 +41,8 @@ func main() {
 			fmt.Println("Left")
 		case data[12]:
 			fmt.Println("Center")
-			err := cmd.Run()
+			//err := cmd.Start()
+			err := syscall.Exec("/bin", args, os.Environ())
 			if err != nil {
 				fmt.Println(err)
 			}
