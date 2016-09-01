@@ -4,7 +4,6 @@ import (
 	"fmt"
 	vlc "github.com/adrg/libvlc-go"
 	"os"
-	"os/exec"
 )
 
 func main() {
@@ -53,61 +52,41 @@ func main() {
 		switch byte(1) {
 		case data[4]:
 			fmt.Println("Left")
-			prev()
-			//jumpBack()
 		case data[12]:
 			fmt.Println("Center")
 			err = player.Pause(player.IsPlaying())
 			if err != nil {
 				fmt.Println("Center", err)
 			}
+			fmt.Println(position(player))
+			fmt.Println(time(player))
+			fmt.Println(length(player))
 		case data[20]:
 			fmt.Println("Right")
-			next()
 		}
 	}
 }
 
-func next() {
-	cmd := exec.Command("xte", "key XF86AudioNext")
-	err := cmd.Run()
+func length(player *vlc.Player) int {
+	duration, err := player.GetLength()
 	if err != nil {
 		fmt.Println(err)
 	}
+	return duration
 }
 
-func prev() {
-	cmd := exec.Command("xte", "key XF86AudioPrev")
-	err := cmd.Run()
+func time(player *vlc.Player) int {
+	t, err := player.GetTime()
 	if err != nil {
 		fmt.Println(err)
 	}
+	return t
 }
 
-func pause() {
-	cmd := exec.Command("xte", "key XF86AudioPlay")
-	err := cmd.Run()
+func position(player *vlc.Player) float32 {
+	p, err := player.GetPosition()
 	if err != nil {
 		fmt.Println(err)
 	}
-}
-
-// This is in the right track,
-// But it totally doesn't work
-// Shift/Alt/Shift+Alt small/medium/large jump
-// according to default VLC
-func jumpBack() {
-	cmd := exec.Command("xte", "keydown Alt_L key Left keyup Alt_L")
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println(err)
-	}
-}
-
-func jumpForw() {
-	cmd := exec.Command("xte", "keydown Alt_L key Right keyup Alt_L")
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println(err)
-	}
+	return p
 }
