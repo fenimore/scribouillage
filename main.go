@@ -82,11 +82,20 @@ func pause() {
 
 // This is in the right track,
 // But it totally doesn't work
+// Shift/Alt/Shift+Alt small/medium/large jump
+// according to default VLC
 func jumpBack() {
+	cmd := exec.Command("xte", "keydown Alt_L key Left keyup Alt_L")
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func jumpForw() {
 	cmd := exec.Command("xte", "keydown Alt_L key Right keyup Alt_L")
 	err := cmd.Run()
 	if err != nil {
 		fmt.Println(err)
 	}
-
 }
