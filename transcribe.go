@@ -28,13 +28,14 @@ func main() {
 	data := make([]byte, 24) // Buffer for reading file
 
 	// Transcriber Construction
+	// For debuggin
 	t := newTranscriber("https://www.freesound.org/" +
 		"data/previews/258/258397_450294-lq.mp3")
 
-	// VLC Init
+	// VLC Initialization and Player Construction
 	err = vlc.Init("--no-video", "--quiet")
 	if err != nil {
-		fmt.Println("Init", err)
+		fmt.Println("VLC init Error: %s\n", err)
 	}
 	defer vlc.Release()
 	t.player, err = vlc.NewPlayer()
@@ -42,17 +43,17 @@ func main() {
 		fmt.Println(err)
 		return //give up
 	}
-	//t.player = player
 	defer func() {
 		t.player.Stop()
 		t.player.Release()
 	}()
 	err = t.player.SetMedia(t.recording, false)
 	if err != nil {
-		fmt.Println("Set Media", err)
+		fmt.Println("Set Media Error: %s\n", err)
 		return
 	}
 
+	// Start Playing Recording
 	err = t.player.Play()
 	if err != nil {
 		fmt.Println(err)
@@ -62,16 +63,15 @@ func main() {
 	for {
 		_, err := file.Read(data)
 		if err != nil {
-			fmt.Println("Read", err)
+			fmt.Println("Reading Hiddev Error: %s\n", err)
 		}
 		switch byte(1) {
 		case data[4]:
 			t.jumpBack()
 		case data[12]:
-			fmt.Println("Center")
 			err = t.player.Pause(t.player.IsPlaying())
 			if err != nil {
-				fmt.Println("Center", err)
+				fmt.Printf("Center Error: %s\n", err)
 			}
 		case data[20]:
 			t.jumpForward()
@@ -79,24 +79,24 @@ func main() {
 	}
 }
 
-// jumpBack jumps back 5 seconds.
+// jumpBack jumps back in position.
 // TODO: modify jump distance.
 func (t *Transcriber) jumpBack() {
 	pos, err := t.player.GetTime()
 	if err != nil {
 		fmt.Println(err)
 	}
-	newPosition := pos - 5000
+	newPosition := pos - t.jump
 	t.player.SetTime(newPosition)
 }
 
-// jumpForward jumps forward 5 seconds.
+// jumpForward jumps forward position.
 // TODO: modify jump distance.
 func (t *Transcriber) jumpForward() {
 	pos, err := t.player.GetTime()
 	if err != nil {
 		fmt.Println(err)
 	}
-	newPosition := pos + 5000
+	newPosition := pos + t.jump
 	t.player.SetTime(newPosition)
 }
