@@ -14,9 +14,7 @@ package main
 
 import "os"
 import "fmt"
-
-//import "os/exec"
-import "syscall"
+import "os/exec"
 
 func main() {
 	file, err := os.Open("/dev/usb/hiddev0")
@@ -29,8 +27,6 @@ func main() {
 	args[1] = "key"
 	args[2] = "XF86AudioPlay"
 
-	//	cmd := exec.Command("xte", "key XF86AudioPlay")
-
 	for {
 		_, err := file.Read(data)
 		if err != nil {
@@ -39,15 +35,25 @@ func main() {
 		switch byte(1) {
 		case data[4]:
 			fmt.Println("Left")
+			cmd := exec.Command("xte", "key XF86AudioPrev")
+			err := cmd.Run()
+			if err != nil {
+				fmt.Println(err)
+			}
 		case data[12]:
 			fmt.Println("Center")
-			//err := cmd.Start()
-			err := syscall.Exec("/bin", args, os.Environ())
+			cmd := exec.Command("xte", "key XF86AudioPlay")
+			err := cmd.Run()
 			if err != nil {
 				fmt.Println(err)
 			}
 		case data[20]:
 			fmt.Println("Right")
+			cmd := exec.Command("xte", "key XF86AudioNext")
+			err := cmd.Run()
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 }
