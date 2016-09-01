@@ -38,25 +38,37 @@ func main() {
 		switch byte(1) {
 		case data[4]:
 			fmt.Println("Left")
-			cmd := exec.Command("xte", "key XF86AudioPrev")
-			err := cmd.Run()
-			if err != nil {
-				fmt.Println(err)
-			}
+			prev()
 		case data[12]:
 			fmt.Println("Center")
-			cmd := exec.Command("xte", "key XF86AudioPlay")
-			err := cmd.Run()
-			if err != nil {
-				fmt.Println(err)
-			}
+			pause()
 		case data[20]:
 			fmt.Println("Right")
-			cmd := exec.Command("xte", "key XF86AudioNext")
-			err := cmd.Run()
-			if err != nil {
-				fmt.Println(err)
-			}
+			next()
 		}
+	}
+}
+
+func next() {
+	cmd := exec.Command("xte", "key XF86AudioNext")
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func prev() {
+	cmd := exec.Command("xte", "key XF86AudioPrev")
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func pause() {
+	cmd := exec.Command("xte", "key XF86AudioPlay")
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println(err)
 	}
 }
