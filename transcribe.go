@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	vlc "github.com/adrg/libvlc-go"
+	vlc "github.com/polypmer/libvlc-go"
 	"os"
 )
 
@@ -51,44 +51,26 @@ func main() {
 		}
 		switch byte(1) {
 		case data[4]:
-			fmt.Println("Left")
-			player.SetTime(1000)
+			jumpBack(player)
 		case data[12]:
 			fmt.Println("Center")
 			err = player.Pause(player.IsPlaying())
 			if err != nil {
 				fmt.Println("Center", err)
 			}
-			fmt.Println(position(player))
-			fmt.Println(time(player))
-			fmt.Println(length(player))
 		case data[20]:
 			fmt.Println("Right")
-			player.SetPosition(.5)
 		}
 	}
 }
 
-func length(player *vlc.Player) int {
-	duration, err := player.GetLength()
-	if err != nil {
-		fmt.Println(err)
-	}
-	return duration
-}
-
-func time(player *vlc.Player) int {
+// jumpBack jumps back 5 seconds.
+// TODO: modify jump distance.
+func jumpBack(player *vlc.Player) {
 	t, err := player.GetTime()
 	if err != nil {
 		fmt.Println(err)
 	}
-	return t
-}
-
-func position(player *vlc.Player) float32 {
-	p, err := player.GetPosition()
-	if err != nil {
-		fmt.Println(err)
-	}
-	return p
+	newTime := t - 5000
+	player.SetTime(newTime)
 }
