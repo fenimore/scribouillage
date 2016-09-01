@@ -6,39 +6,54 @@ import (
 	"os"
 )
 
+type Transcriber struct {
+	jump      int
+	recording string
+	player    *vlc.Player
+}
+
+func newTranscriber(path string) *Transcriber {
+	return &Transcriber{
+		jump:      5000,
+		recording: path,
+	}
+}
+
 func main() {
+	// So-called driver for Infinity Pedal
 	file, err := os.Open("/dev/usb/hiddev0")
 	if err != nil {
 		fmt.Println("File Open", err)
 	}
 	data := make([]byte, 24) // Buffer for reading file
 
-	// VLC
+	// Transcriber Construction
+	t := newTranscriber("https://www.freesound.org/" +
+		"data/previews/258/258397_450294-lq.mp3")
+
+	// VLC Init
 	err = vlc.Init("--no-video", "--quiet")
 	if err != nil {
 		fmt.Println("Init", err)
 	}
-	// Defer defers in reverse order
 	defer vlc.Release()
-
-	player, err := vlc.NewPlayer()
+	t.player, err = vlc.NewPlayer()
 	if err != nil {
 		fmt.Println(err)
 		return //give up
 	}
-
+	//t.player = player
 	defer func() {
-		player.Stop()
-		player.Release()
+		t.player.Stop()
+		t.player.Release()
 	}()
-
-	err = player.SetMedia("https://www.freesound.org/data/previews/258/258397_450294-lq.mp3", false)
+	err = t.player.SetMedia(t.recording, false)
 	if err != nil {
 		fmt.Println("Set Media", err)
 		return
 	}
 
-	err = player.Play()
+	err = t.player.Play()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -51,26 +66,37 @@ func main() {
 		}
 		switch byte(1) {
 		case data[4]:
-			jumpBack(player)
+			t.jumpBack()
 		case data[12]:
 			fmt.Println("Center")
-			err = player.Pause(player.IsPlaying())
+			err = t.player.Pause(t.player.IsPlaying())
 			if err != nil {
 				fmt.Println("Center", err)
 			}
 		case data[20]:
-			fmt.Println("Right")
+			t.jumpForward()
 		}
 	}
 }
 
 // jumpBack jumps back 5 seconds.
 // TODO: modify jump distance.
-func jumpBack(player *vlc.Player) {
-	t, err := player.GetTime()
+func (t *Transcriber) jumpBack() {
+	pos, err := t.player.GetTime()
 	if err != nil {
 		fmt.Println(err)
 	}
-	newTime := t - 5000
-	player.SetTime(newTime)
+	newPosition := pos - 5000
+	t.player.SetTime(newPosition)
+}
+
+// jumpForward jumps forward 5 seconds.
+// TODO: modify jump distance.
+func (t *Transcriber) jumpForward() {
+	pos, err := t.player.GetTime()
+	if err != nil {
+		fmt.Println(err)
+	}
+	newPosition := pos + 5000
+	t.player.SetTime(newPosition)
 }
