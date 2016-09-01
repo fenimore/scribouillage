@@ -60,6 +60,9 @@ func main() {
 		return
 	}
 
+	fmt.Println(t.stats())
+	fmt.Println("Start Recording: ")
+
 	for {
 		_, err := file.Read(data)
 		if err != nil {
@@ -73,6 +76,7 @@ func main() {
 			if err != nil {
 				fmt.Printf("Center Error: %s\n", err)
 			}
+			fmt.Println(t.stats())
 		case data[20]:
 			t.jumpForward()
 		}
@@ -99,4 +103,24 @@ func (t *Transcriber) jumpForward() {
 	}
 	newPosition := pos + t.jump
 	t.player.SetTime(newPosition)
+}
+
+func (t *Transcriber) stats() string {
+	tim, err := t.player.GetTime()
+	if err != nil {
+		fmt.Println(err)
+	}
+	pos, err := t.player.GetPosition()
+	if err != nil {
+		fmt.Println(err)
+	}
+	len, err := t.player.GetLength()
+	if err != nil {
+		fmt.Println(err)
+	}
+	second := tim / 1000
+	percentage := pos * 100
+	total := len / 1000
+	return fmt.Sprintf("Of %d seconds, in second %d\nPercentage: %.f%%",
+		total, second, percentage)
 }
