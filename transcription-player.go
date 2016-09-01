@@ -52,6 +52,7 @@ func main() {
 		switch byte(1) {
 		case data[4]:
 			fmt.Println("Left")
+			player.SetTime(1000)
 		case data[12]:
 			fmt.Println("Center")
 			err = player.Pause(player.IsPlaying())
@@ -63,6 +64,7 @@ func main() {
 			fmt.Println(length(player))
 		case data[20]:
 			fmt.Println("Right")
+			player.SetPosition(.5)
 		}
 	}
 }
