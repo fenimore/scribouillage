@@ -14,7 +14,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -27,15 +26,6 @@ func main() {
 	}
 	data := make([]byte, 24) // Buffer for reading file
 
-	// Flags
-	// TODO: Have flag decide distance of Jump
-	tranFlag := flag.Bool("t", false, "For transcriptions")
-
-	flag.Parse()
-	if *tranFlag {
-		fmt.Println("Using for transcription")
-	}
-
 	for {
 		_, err := file.Read(data)
 		if err != nil {
@@ -45,7 +35,6 @@ func main() {
 		case data[4]:
 			fmt.Println("Left")
 			prev()
-			//jumpBack()
 		case data[12]:
 			fmt.Println("Center")
 			pause()
@@ -74,26 +63,6 @@ func prev() {
 
 func pause() {
 	cmd := exec.Command("xte", "key XF86AudioPlay")
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println(err)
-	}
-}
-
-// This is in the right track,
-// But it totally doesn't work
-// Shift/Alt/Shift+Alt small/medium/large jump
-// according to default VLC
-func jumpBack() {
-	cmd := exec.Command("xte", "keydown Alt_L key Left keyup Alt_L")
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println(err)
-	}
-}
-
-func jumpForw() {
-	cmd := exec.Command("xte", "keydown Alt_L key Right keyup Alt_L")
 	err := cmd.Run()
 	if err != nil {
 		fmt.Println(err)
