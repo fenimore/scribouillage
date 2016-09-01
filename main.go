@@ -14,6 +14,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -25,10 +26,15 @@ func main() {
 		fmt.Println(err)
 	}
 	data := make([]byte, 24) // Buffer for reading file
-	args := make([]string, 3)
-	args[0] = "xte"
-	args[1] = "key"
-	args[2] = "XF86AudioPlay"
+
+	// Flags
+	// TODO: Have flag decide distance of Jump
+	tranFlag := flag.Bool("t", false, "For transcriptions")
+
+	flag.Parse()
+	if *tranFlag {
+		fmt.Println("Using for transcription")
+	}
 
 	for {
 		_, err := file.Read(data)
@@ -39,6 +45,7 @@ func main() {
 		case data[4]:
 			fmt.Println("Left")
 			prev()
+			//jumpBack()
 		case data[12]:
 			fmt.Println("Center")
 			pause()
@@ -71,4 +78,15 @@ func pause() {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+// This is in the right track,
+// But it totally doesn't work
+func jumpBack() {
+	cmd := exec.Command("xte", "keydown Alt_L key Right keyup Alt_L")
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println(err)
+	}
+
 }
