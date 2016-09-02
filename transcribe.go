@@ -10,6 +10,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	ui "github.com/gizak/termui"
 	vlc "github.com/polypmer/libvlc-go"
@@ -22,9 +23,10 @@ type Transcriber struct {
 	player    *vlc.Player
 }
 
-func newTranscriber(path string) *Transcriber {
+func newTranscriber(path string, seconds int) *Transcriber {
+	seconds = seconds * 1000
 	return &Transcriber{
-		jump:      5000,
+		jump:      seconds,
 		recording: path,
 	}
 }
@@ -39,10 +41,12 @@ func main() {
 	}
 	data := make([]byte, 24) // Buffer for reading file
 
+	pathFlag := flag.String("p", "https://www.freesound.org/data/previews/258/258397_450294-lq.mp3", "Path to recording.")
+	jumpFlag := flag.Int("j", 5, "Jump distance in seconds.")
+
 	// Transcriber Construction
 	// For debuggin
-	t := newTranscriber("https://www.freesound.org/" +
-		"data/previews/258/258397_450294-lq.mp3")
+	t := newTranscriber(*pathFlag, *jumpFlag)
 
 	// VLC Initialization and Player Construction
 	err = vlc.Init("--no-video", "--quiet")
@@ -61,26 +65,26 @@ func main() {
 	}()
 	err = t.player.SetMedia(t.recording, false)
 	if err != nil {
-		fmt.Println("Set Media Error: %s\n", err)
+		fmt.Println("Set Media Path Error: %s\n", err)
 		return
 	}
 
 	// Start Playing Recording
 	err = t.player.Play()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Player Play: ", err)
 		return
 	}
 
 	// User Interface
-	fmt.Println(t.stats())
 	fmt.Println("Start Recording: ")
 	err = ui.Init()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("UI Init: ", err)
 	}
 	defer ui.Close()
 
+	// Recording Progress
 	g := ui.NewGauge()
 	g.Percent = 0
 	g.Width = 50
@@ -89,17 +93,25 @@ func main() {
 	g.BorderLabel = "Recording"
 	g.Label = "{{percent}}%"
 
+	// Instructions
+	p := ui.NewPar("Press q to quit")
+	p.Height = 3
+	p.Width = 50
+	p.Y = 4
+	p.BorderLabel = "Instructions"
+	p.BorderFg = ui.ColorYellow
+
 	ui.Handle("/sys/kbd/q", func(ui.Event) {
 		ui.StopLoop()
 	})
 
-	ui.Render(g)
+	ui.Render(g, p)
 	fmt.Println("Press q to exit")
 	go func() {
 		for {
 			pos, err := t.player.GetPosition()
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println("Get Position: ", err)
 			}
 			percentage := pos * 100
 			//tim, err := t.player.GetTime()
@@ -109,7 +121,6 @@ func main() {
 			//seconds := tim * 1000
 			g.Percent = int(percentage)
 			// TODO: Add seconds to label
-			g.Label = "{{percent}}%"
 			ui.Render(g)
 		}
 	}()
@@ -129,7 +140,7 @@ func main() {
 				if err != nil {
 					fmt.Printf("Center Error: %s\n", err)
 				}
-				fmt.Println(t.stats())
+				//fmt.Println(t.stats())
 			case data[20]:
 				t.jumpForward()
 			}
@@ -143,7 +154,7 @@ func main() {
 func (t *Transcriber) jumpBack() {
 	pos, err := t.player.GetTime()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Jump Back: ", err)
 	}
 	newPosition := pos - t.jump
 	t.player.SetTime(newPosition)
@@ -154,7 +165,7 @@ func (t *Transcriber) jumpBack() {
 func (t *Transcriber) jumpForward() {
 	pos, err := t.player.GetTime()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Jump Forward: ", err)
 	}
 	newPosition := pos + t.jump
 	t.player.SetTime(newPosition)
