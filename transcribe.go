@@ -1,3 +1,12 @@
+// package transcribe uses libvlc bindings to play a recording.
+// The driver, so-called, then communicates with libvlc in order
+// to jump forward and back in the recording.
+//
+// Fenimore Love (c) 2016 | GPLv3
+//
+// TODO:
+// - add flags for jump values.
+// - finish terminal ui.
 package main
 
 import (
