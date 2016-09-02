@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	ui "github.com/gizak/termui"
 	vlc "github.com/polypmer/libvlc-go"
 	"os"
 )
@@ -60,27 +61,60 @@ func main() {
 		return
 	}
 
+	// User Interface
 	fmt.Println(t.stats())
 	fmt.Println("Start Recording: ")
-
-	for {
-		_, err := file.Read(data)
-		if err != nil {
-			fmt.Println("Reading Hiddev Error: %s\n", err)
-		}
-		switch byte(1) {
-		case data[4]:
-			t.jumpBack()
-		case data[12]:
-			err = t.player.Pause(t.player.IsPlaying())
-			if err != nil {
-				fmt.Printf("Center Error: %s\n", err)
-			}
-			fmt.Println(t.stats())
-		case data[20]:
-			t.jumpForward()
-		}
+	err = ui.Init()
+	if err != nil {
+		fmt.Println(err)
 	}
+	defer ui.Close()
+
+	g := ui.NewGauge()
+	g.Percent = 0
+	g.Width = 50
+	g.Height = 3
+	//g.Y = 14
+	g.BorderLabel = "Recording"
+	g.Label = "{{percent}}%"
+
+	ui.Handle("/sys/kbd/q", func(ui.Event) {
+		ui.StopLoop()
+	})
+
+	ui.Render(g)
+	go func() {
+		for {
+			pos, err := t.player.GetPosition()
+			if err != nil {
+				fmt.Println(err)
+			}
+			percentage := pos * 100
+			g.Percent = int(percentage)
+			ui.Render(g)
+		}
+	}()
+	go func() {
+		for {
+			_, err := file.Read(data)
+			if err != nil {
+				fmt.Println("Reading Hiddev Error: %s\n", err)
+			}
+			switch byte(1) {
+			case data[4]:
+				t.jumpBack()
+			case data[12]:
+				err = t.player.Pause(t.player.IsPlaying())
+				if err != nil {
+					fmt.Printf("Center Error: %s\n", err)
+				}
+				fmt.Println(t.stats())
+			case data[20]:
+				t.jumpForward()
+			}
+		}
+	}()
+	ui.Loop()
 }
 
 // jumpBack jumps back in position.
@@ -121,6 +155,6 @@ func (t *Transcriber) stats() string {
 	second := tim / 1000
 	percentage := pos * 100
 	total := len / 1000
-	return fmt.Sprintf("Of %d seconds, in second %d\nPercentage: %.f%%",
+	return fmt.Sprintf("\nOf %d seconds, in second %d\nPercentage: %.f%%",
 		total, second, percentage)
 }
