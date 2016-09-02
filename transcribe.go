@@ -90,7 +90,14 @@ func main() {
 				fmt.Println(err)
 			}
 			percentage := pos * 100
+			tim, err := t.player.GetTime()
+			if err != nil {
+				fmt.Println(err)
+			}
+			seconds := tim * 1000
 			g.Percent = int(percentage)
+			// TODO: Add seconds to label
+			g.Label = "{{percent}}%"
 			ui.Render(g)
 		}
 	}()
