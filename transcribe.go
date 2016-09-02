@@ -117,6 +117,13 @@ func main() {
 	fmt.Println("Press q to exit")
 	go func() {
 		for {
+			state, err := t.player.GetState()
+			if err != nil {
+				fmt.Println("Get State: ", err)
+			}
+			if state != 4 && state != 3 {
+				continue
+			}
 			pos, err := t.player.GetPosition()
 			if err != nil {
 				fmt.Println("Get Position: ", err)
