@@ -33,7 +33,9 @@ func main() {
 	// So-called driver for Infinity Pedal
 	file, err := os.Open("/dev/usb/hiddev0")
 	if err != nil {
-		fmt.Println("File Open", err)
+		fmt.Println("Footpedal Error: ", err)
+		fmt.Println("Make sure the Footpedal is plugged in to your computer.\nhidddev0 should appear in /dev/usb, and you must have reading privilegs for this file.")
+		return
 	}
 	data := make([]byte, 24) // Buffer for reading file
 
@@ -92,6 +94,7 @@ func main() {
 	})
 
 	ui.Render(g)
+	fmt.Println("Press q to exit")
 	go func() {
 		for {
 			pos, err := t.player.GetPosition()
@@ -99,11 +102,11 @@ func main() {
 				fmt.Println(err)
 			}
 			percentage := pos * 100
-			tim, err := t.player.GetTime()
-			if err != nil {
-				fmt.Println(err)
-			}
-			seconds := tim * 1000
+			//tim, err := t.player.GetTime()
+			//if err != nil {
+			//	fmt.Println(err)
+			//}
+			//seconds := tim * 1000
 			g.Percent = int(percentage)
 			// TODO: Add seconds to label
 			g.Label = "{{percent}}%"
@@ -115,6 +118,8 @@ func main() {
 			_, err := file.Read(data)
 			if err != nil {
 				fmt.Println("Reading Hiddev Error: %s\n", err)
+				fmt.Println("You must have reading privilegs for the file hiddev0 in /dev/usb/")
+				return
 			}
 			switch byte(1) {
 			case data[4]:
