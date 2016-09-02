@@ -43,11 +43,11 @@ func main() {
 
 	pathFlag := flag.String("p", "https://www.freesound.org/data/previews/258/258397_450294-lq.mp3", "Path to recording.")
 	jumpFlag := flag.Int("j", 5, "Jump distance in seconds.")
-
+	flag.Parse()
 	// Transcriber Construction
 	// For debuggin
 	t := newTranscriber(*pathFlag, *jumpFlag)
-
+	fmt.Println(t.jump, *jumpFlag)
 	// VLC Initialization and Player Construction
 	err = vlc.Init("--no-video", "--quiet")
 	if err != nil {
@@ -97,15 +97,22 @@ func main() {
 	p := ui.NewPar("Press q to quit")
 	p.Height = 3
 	p.Width = 50
-	p.Y = 4
+	p.Y = 6
 	p.BorderLabel = "Instructions"
 	p.BorderFg = ui.ColorYellow
+
+	// Status
+	s := ui.NewPar(" /  seconds")
+	s.Height = 3
+	s.Width = 50
+	s.Y = 3
+	s.BorderLabel = "Time"
 
 	ui.Handle("/sys/kbd/q", func(ui.Event) {
 		ui.StopLoop()
 	})
 
-	ui.Render(g, p)
+	ui.Render(g, p, s)
 	fmt.Println("Press q to exit")
 	go func() {
 		for {
@@ -114,14 +121,15 @@ func main() {
 				fmt.Println("Get Position: ", err)
 			}
 			percentage := pos * 100
-			//tim, err := t.player.GetTime()
-			//if err != nil {
-			//	fmt.Println(err)
-			//}
-			//seconds := tim * 1000
 			g.Percent = int(percentage)
-			// TODO: Add seconds to label
-			ui.Render(g)
+			sec, tot := t.stats()
+			status := fmt.Sprintf("%s / %s seconds", sec, tot)
+			s = ui.NewPar(status)
+			s.Height = 3
+			s.Width = 50
+			s.Y = 3
+			s.BorderLabel = "Time"
+			ui.Render(g, s)
 		}
 	}()
 	go func() {
@@ -171,22 +179,17 @@ func (t *Transcriber) jumpForward() {
 	t.player.SetTime(newPosition)
 }
 
-func (t *Transcriber) stats() string {
+func (t *Transcriber) stats() (string, string) {
 	tim, err := t.player.GetTime()
 	if err != nil {
-		fmt.Println(err)
-	}
-	pos, err := t.player.GetPosition()
-	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Get Time: ", err)
 	}
 	len, err := t.player.GetLength()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Get Length: ", err)
 	}
 	second := tim / 1000
-	percentage := pos * 100
 	total := len / 1000
-	return fmt.Sprintf("\nOf %d seconds, in second %d\nPercentage: %.f%%",
-		total, second, percentage)
+
+	return fmt.Sprintf("%d", second), fmt.Sprintf("%d", total)
 }
