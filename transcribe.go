@@ -46,6 +46,7 @@ func main() {
 	flag.Parse()
 	// Transcriber Construction
 	// For debuggin
+	// TODO: local files don't work?
 	t := newTranscriber(*pathFlag, *jumpFlag)
 	fmt.Println(t.jump, *jumpFlag)
 	// VLC Initialization and Player Construction
@@ -133,6 +134,7 @@ func main() {
 		}
 	}()
 	go func() {
+		// TODO: Add small delay to avoid mistaken double presses?
 		for {
 			_, err := file.Read(data)
 			if err != nil {
