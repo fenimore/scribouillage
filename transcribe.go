@@ -15,6 +15,8 @@ import (
 	ui "github.com/gizak/termui"
 	vlc "github.com/polypmer/libvlc-go"
 	"os"
+	"strings"
+	"time"
 )
 
 type Transcriber struct {
@@ -64,12 +66,17 @@ func main() {
 		t.player.Stop()
 		t.player.Release()
 	}()
-	err = t.player.SetMedia(t.recording, false)
+	// SetMedia for Player
+	local := !strings.HasPrefix(t.recording, "http")
+	if local {
+		err = t.player.SetMedia(t.recording, true)
+	} else {
+		err = t.player.SetMedia(t.recording, false)
+	}
 	if err != nil {
 		fmt.Println("Set Media Path Error: %s\n", err)
 		return
 	}
-
 	// Start Playing Recording
 	err = t.player.Play()
 	if err != nil {
@@ -79,7 +86,79 @@ func main() {
 
 	// User Interface
 	fmt.Println("Start Recording: ")
-	err = ui.Init()
+
+	// UI thread
+
+	go t.driverThread(data, file)
+	t.uiThread()
+	//ui.Loop()
+}
+
+// jumpBack jumps back in position.
+// TODO: modify jump distance.
+func (t *Transcriber) jumpBack() {
+	pos, err := t.player.GetTime()
+	if err != nil {
+		fmt.Println("Jump Back: ", err)
+	}
+	newPosition := pos - t.jump
+	t.player.SetTime(newPosition)
+}
+
+// jumpForward jumps forward position.
+// TODO: modify jump distance.
+func (t *Transcriber) jumpForward() {
+	pos, err := t.player.GetTime()
+	if err != nil {
+		fmt.Println("Jump Forward: ", err)
+	}
+	newPosition := pos + t.jump
+	t.player.SetTime(newPosition)
+}
+
+func (t *Transcriber) stats() (string, string) {
+	tim, err := t.player.GetTime()
+	if err != nil {
+		fmt.Println("Stats Get Time: ", err)
+	}
+	len, err := t.player.GetLength()
+	if err != nil {
+		fmt.Println("Stats Get Length: ", err)
+	}
+	second := tim / 1000
+	total := len / 1000
+
+	return fmt.Sprintf("%d", second), fmt.Sprintf("%d", total)
+}
+
+// Run as goroutine?
+func (t *Transcriber) driverThread(buff []byte, file *os.File) {
+	for {
+		_, err := file.Read(buff)
+		if err != nil {
+			fmt.Println("Reading Hiddev Error: %s\n", err)
+			fmt.Println("You must have reading privilegs for the file hiddev0 in /dev/usb/")
+			return
+		}
+		switch byte(1) {
+		case buff[4]:
+			t.jumpBack()
+		case buff[12]:
+			//fmt.Println(t.player.IsPlaying())
+			err = t.player.Pause(t.player.IsPlaying())
+			if err != nil {
+				fmt.Printf("Center Error: %s\n", err)
+			}
+			//fmt.Println(t.stats())
+		case buff[20]:
+			t.jumpForward()
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func (t *Transcriber) uiThread() {
+	err := ui.Init()
 	if err != nil {
 		fmt.Println("UI Init: ", err)
 	}
@@ -114,14 +193,14 @@ func main() {
 	})
 
 	ui.Render(g, p, s)
-	fmt.Println("Press q to exit")
 	go func() {
 		for {
 			state, err := t.player.GetState()
 			if err != nil {
 				fmt.Println("Get State: ", err)
+				break
 			}
-			if state != 4 && state != 3 {
+			if state != 4 && state != 3 && state != 6 {
 				continue
 			}
 			pos, err := t.player.GetPosition()
@@ -138,67 +217,15 @@ func main() {
 			s.Y = 3
 			s.BorderLabel = "Time"
 			ui.Render(g, s)
-		}
-	}()
-	go func() {
-		// TODO: Add small delay to avoid mistaken double presses?
-		for {
-			_, err := file.Read(data)
-			if err != nil {
-				fmt.Println("Reading Hiddev Error: %s\n", err)
-				fmt.Println("You must have reading privilegs for the file hiddev0 in /dev/usb/")
-				return
-			}
-			switch byte(1) {
-			case data[4]:
-				t.jumpBack()
-			case data[12]:
-				err = t.player.Pause(t.player.IsPlaying())
+			if state == 6 {
+				err = t.player.Stop()
 				if err != nil {
-					fmt.Printf("Center Error: %s\n", err)
+					fmt.Println("Stop: ", err)
 				}
-				//fmt.Println(t.stats())
-			case data[20]:
-				t.jumpForward()
 			}
+			//fmt.Println("Blip")
 		}
+		fmt.Println("No active Connection?")
 	}()
 	ui.Loop()
-}
-
-// jumpBack jumps back in position.
-// TODO: modify jump distance.
-func (t *Transcriber) jumpBack() {
-	pos, err := t.player.GetTime()
-	if err != nil {
-		fmt.Println("Jump Back: ", err)
-	}
-	newPosition := pos - t.jump
-	t.player.SetTime(newPosition)
-}
-
-// jumpForward jumps forward position.
-// TODO: modify jump distance.
-func (t *Transcriber) jumpForward() {
-	pos, err := t.player.GetTime()
-	if err != nil {
-		fmt.Println("Jump Forward: ", err)
-	}
-	newPosition := pos + t.jump
-	t.player.SetTime(newPosition)
-}
-
-func (t *Transcriber) stats() (string, string) {
-	tim, err := t.player.GetTime()
-	if err != nil {
-		fmt.Println("Get Time: ", err)
-	}
-	len, err := t.player.GetLength()
-	if err != nil {
-		fmt.Println("Get Length: ", err)
-	}
-	second := tim / 1000
-	total := len / 1000
-
-	return fmt.Sprintf("%d", second), fmt.Sprintf("%d", total)
 }
