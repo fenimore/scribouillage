@@ -19,9 +19,22 @@ import (
 )
 
 func main() {
-	_, err := hid.Open(0x05f3, 0x00ff, "")
+	_, err := hid.OpenPath("/dev/hidraw1")
 	if err != nil {
 		fmt.Println(err)
 	}
 	//defer pedal.Close()
+	devices, err := hid.Enumerate(0x05f3, 0x00ff)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(devices[0])
+	dev := devices[0]
+	fmt.Println(dev.Path)
+	device, err := dev.Device()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(device)
+
 }
