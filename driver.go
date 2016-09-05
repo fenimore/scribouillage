@@ -15,30 +15,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/GeertJohan/go.hid"
+	"github.com/boombuler/hid"
 )
 
 func main() {
 	//defer pedal.Close()
-	devices, err := hid.Enumerate(0x05f3, 0x00ff)
+	devices := hid.Devices()
+	fmt.Printf("%T\n", devices)
+	di := <-devices
+	d, err := di.Open()
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(devices)
-	dev := devices[0]
-	fmt.Println(dev.Path, dev.InterfaceNumber)
-	fmt.Println(dev.VendorId, dev.ProductId)
-	device, err := dev.Device()
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(device)
-	/// WHAT?
-
-	d, err := hid.Open(0x05f3, 0x00ff, "")
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(d)
-
+	fmt.Print(d)
 }
