@@ -15,56 +15,13 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
+	"github.com/GeertJohan/go.hid"
 )
 
 func main() {
-	file, err := os.Open("/dev/usb/hiddev0")
+	_, err := hid.Open(0x05f3, 0x00ff, "")
 	if err != nil {
 		fmt.Println(err)
 	}
-	data := make([]byte, 24) // Buffer for reading file
-
-	for {
-		_, err := file.Read(data)
-		if err != nil {
-			fmt.Println(err)
-		}
-		switch byte(1) {
-		case data[4]:
-			fmt.Println("Left")
-			prev()
-		case data[12]:
-			fmt.Println("Center")
-			pause()
-		case data[20]:
-			fmt.Println("Right")
-			next()
-		}
-	}
-}
-
-func next() {
-	cmd := exec.Command("xte", "key XF86AudioNext")
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println(err)
-	}
-}
-
-func prev() {
-	cmd := exec.Command("xte", "key XF86AudioPrev")
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println(err)
-	}
-}
-
-func pause() {
-	cmd := exec.Command("xte", "key XF86AudioPlay")
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println(err)
-	}
+	//defer pedal.Close()
 }
