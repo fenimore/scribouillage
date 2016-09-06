@@ -13,47 +13,48 @@
 // keystrokes. For archlinux, this is found in the xautomation package.
 package main
 
-// #cgo pkg-config: libusb-1.0
-// #include <libusb-1.0/libusb.h>
-import "C"
-
 import (
+	"bytes"
+	"encoding/hex"
 	"fmt"
-	"reflect"
-	"unsafe"
+	"github.com/zserge/hid"
+	"time"
 )
 
-func init() {
-	C.libusb_init(nil)
-}
-
 func main() {
-	devs := Devices()
-	for _, dev := range devs {
-		fmt.Println(dev)
-		s := C.libusb_get_device_address(dev)
-		fmt.Println(s)
+	target := "05f3:00ff:0120"
+	var dev hid.Device
+	hid.UsbWalk(func(device hid.Device) {
+		info := device.Info()
+		d := fmt.Sprintf("%04x:%04x:%04x", info.Vendor, info.Product, info.Revision)
+		if d == target {
+			dev = device
+		}
+	})
+	fmt.Println(dev)
+	err := dev.Open()
+	if err != nil {
+		fmt.Printf("Open Error: %s, Check Privileges\n", err)
 	}
-}
+	defer dev.Close()
 
-func Devices() []*C.libusb_device {
-	//result := make(C.struct_libusb_device, 0, 10)
-	var devices **C.struct_libusb_device // a list?
-	count := C.libusb_get_device_list(nil, &devices)
-	if count < 0 {
-		return nil
+	if report, err := dev.HIDReport(); err != nil {
+		fmt.Println("HID report error:", err)
+		return
+	} else {
+		fmt.Println("HID report", hex.EncodeToString(report))
 	}
-	defer C.libusb_free_device_list(devices, 1)
 
-	return getDeviceList(devices, count)
-}
-
-func getDeviceList(devices **C.struct_libusb_device, cnt C.ssize_t) []*C.libusb_device {
-	var list []*C.libusb_device
-	*(*reflect.SliceHeader)(unsafe.Pointer(&list)) = reflect.SliceHeader{
-		Data: uintptr(unsafe.Pointer(devices)),
-		Len:  int(cnt),
-		Cap:  int(cnt),
+	for {
+		if buf, err := dev.Read(-1, 1*time.Second); err == nil {
+			fmt.Println("Input report:  ", hex.EncodeToString(buf))
+			decoded, err := hex.DecodeString("0000")
+			if err != nil {
+				fmt.Println(err)
+			}
+			if bytes.Equal(decoded, buf) {
+				fmt.Println("Yes")
+			}
+		}
 	}
-	return list
 }
