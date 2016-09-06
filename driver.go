@@ -15,17 +15,52 @@ package main
 
 import (
 	"fmt"
-	"github.com/boombuler/hid"
+	ghid "github.com/GeertJohan/go.hid"
+	bhid "github.com/boombuler/hid"
+	"github.com/flynn/hid"
+	"strings"
 )
 
 func main() {
-	//defer pedal.Close()
-	devices := hid.Devices()
-	fmt.Printf("%T\n", devices)
-	di := <-devices
-	d, err := di.Open()
-	if err != nil {
-		fmt.Println(err)
+	devices, errs := hid.Devices()
+	if errs != nil {
+		fmt.Println(errs)
 	}
-	fmt.Print(d)
+	for elem := range devices {
+		fmt.Println(elem)
+	}
+	//boombuler()
+}
+
+func boombuler() {
+	devices := bhid.Devices()
+	fmt.Printf("%T\n", devices)
+	for elem := range devices {
+		fmt.Println(elem.Path)
+		if strings.HasPrefix(elem.Path, "05f3:00ff") {
+			fmt.Println(elem.VendorId)
+			fmt.Println("yes")
+			d, err := elem.Open()
+			// and then close
+			if err != nil {
+				fmt.Println(err)
+				// Seems to always get -3 error
+				// Insufficent Permission
+			}
+			fmt.Println(d)
+		}
+	}
+}
+
+func Geert() {
+	ds, _ := ghid.Enumerate(0x0, 0x0)
+	for _, d := range ds {
+		fmt.Println(d.VendorId)
+		fmt.Println(d.Path)
+		dev, err := d.Device()
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(dev)
+	}
 }
