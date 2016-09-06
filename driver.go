@@ -13,54 +13,47 @@
 // keystrokes. For archlinux, this is found in the xautomation package.
 package main
 
+// #cgo pkg-config: libusb-1.0
+// #include <libusb-1.0/libusb.h>
+import "C"
+
 import (
 	"fmt"
-	ghid "github.com/GeertJohan/go.hid"
-	bhid "github.com/boombuler/hid"
-	"github.com/flynn/hid"
-	"strings"
+	"reflect"
+	"unsafe"
 )
 
+func init() {
+	C.libusb_init(nil)
+}
+
 func main() {
-	devices, errs := hid.Devices()
-	if errs != nil {
-		fmt.Println(errs)
-	}
-	for elem := range devices {
-		fmt.Println(elem)
-	}
-	//boombuler()
-}
-
-func boombuler() {
-	devices := bhid.Devices()
-	fmt.Printf("%T\n", devices)
-	for elem := range devices {
-		fmt.Println(elem.Path)
-		if strings.HasPrefix(elem.Path, "05f3:00ff") {
-			fmt.Println(elem.VendorId)
-			fmt.Println("yes")
-			d, err := elem.Open()
-			// and then close
-			if err != nil {
-				fmt.Println(err)
-				// Seems to always get -3 error
-				// Insufficent Permission
-			}
-			fmt.Println(d)
-		}
-	}
-}
-
-func Geert() {
-	ds, _ := ghid.Enumerate(0x0, 0x0)
-	for _, d := range ds {
-		fmt.Println(d.VendorId)
-		fmt.Println(d.Path)
-		dev, err := d.Device()
-		if err != nil {
-			fmt.Println(err)
-		}
+	devs := Devices()
+	for _, dev := range devs {
 		fmt.Println(dev)
+		s := C.libusb_get_device_address(dev)
+		fmt.Println(s)
 	}
+}
+
+func Devices() []*C.libusb_device {
+	//result := make(C.struct_libusb_device, 0, 10)
+	var devices **C.struct_libusb_device // a list?
+	count := C.libusb_get_device_list(nil, &devices)
+	if count < 0 {
+		return nil
+	}
+	defer C.libusb_free_device_list(devices, 1)
+
+	return getDeviceList(devices, count)
+}
+
+func getDeviceList(devices **C.struct_libusb_device, cnt C.ssize_t) []*C.libusb_device {
+	var list []*C.libusb_device
+	*(*reflect.SliceHeader)(unsafe.Pointer(&list)) = reflect.SliceHeader{
+		Data: uintptr(unsafe.Pointer(devices)),
+		Len:  int(cnt),
+		Cap:  int(cnt),
+	}
+	return list
 }
