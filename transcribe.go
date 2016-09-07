@@ -25,7 +25,7 @@ type Transcriber struct {
 type MainWindow struct {
 	win    *ui.Window
 	picker *ui.Entry
-	bPlay  *ui.Button
+	bStart *ui.Button
 	bPause *ui.Button
 	bReset *ui.Button
 	status *ui.Label
@@ -38,10 +38,8 @@ type MainWindow struct {
 func NewTranscriber() *Transcriber {
 
 	t := Transcriber{}
-
 	// VLC data
 	t.jump = 5000
-	t.recording = "https://www.freesound.org/data/previews/258/258397_450294-lq.mp3"
 
 	return &t
 }
@@ -52,9 +50,13 @@ func NewMainWindow() *MainWindow {
 	w.win = ui.NewWindow("Transcriber", 400, 400, false)
 	w.picker = ui.NewEntry()
 	w.slider = ui.NewSlider(0, 100)
-	w.bPlay = ui.NewButton("Start")
-	w.bPlay.OnClicked(func(*ui.Button) {
+	w.bStart = ui.NewButton("Start")
+	w.bStart.OnClicked(func(*ui.Button) {
 		// Do nothign
+		err := w.Start("https://www.freesound.org/data/previews/258/258397_450294-lq.mp3")
+		if err != nil {
+			fmt.Println(err)
+		}
 	})
 	w.bPause = ui.NewButton("Pause")
 	w.bPause.OnClicked(func(*ui.Button) {
@@ -70,7 +72,7 @@ func NewMainWindow() *MainWindow {
 	w.box.Append(ui.NewLabel("Recording Path"), false)
 	w.box.Append(w.picker, false)
 	w.box.Append(w.slider, false)
-	w.box.Append(w.bPlay, false)
+	w.box.Append(w.bStart, false)
 	w.box.Append(w.bPause, false)
 	w.box.Append(w.status, false)
 	w.win.SetChild(w.box)
@@ -99,33 +101,61 @@ func main() {
 		t.player.Stop()
 		t.player.Release()
 	}()
-
-	// SetMedia for Player
-	local := !strings.HasPrefix(t.recording, "http")
-	if local {
-		err = t.player.SetMedia(t.recording, true)
-	} else {
-		err = t.player.SetMedia(t.recording, false)
-	}
-	if err != nil {
-		fmt.Println("Set Media Path Error: %s\n", err)
-		return
-	}
-
 	err = ui.Main(func() {
 		mw := NewMainWindow()
 		mw.transcribe = t
 		mw.win.Show()
-		err := mw.transcribe.player.Play()
+		err = mw.Start("/home/fen/flowers.mp3")
 		if err != nil {
 			fmt.Println(err)
 		}
-
 	})
 	if err != nil {
 		fmt.Println(err)
 	}
+}
 
+func (mw *MainWindow) UpdateSlide() error {
+	for {
+		state, err := mw.transcribe.player.GetState()
+		if err != nil {
+			fmt.Println("Get State Error: ", err)
+			fmt.Println("Recording is not connected")
+			return err
+		}
+		if state != 4 && state != 3 {
+			continue
+		}
+		pos, err := mw.transcribe.player.GetPosition()
+		if err != nil {
+			return err
+		}
+		percent := pos * 100
+		mw.slider.SetValue(int(percent))
+	}
+	return nil
+}
+
+func (mw *MainWindow) Start(path string) error {
+	// SetMedia for Player
+	var err error
+	mw.transcribe.recording = path
+	local := !strings.HasPrefix(mw.transcribe.recording, "http")
+	if local {
+		err = mw.transcribe.player.SetMedia(mw.transcribe.recording, true)
+	} else {
+		err = mw.transcribe.player.SetMedia(mw.transcribe.recording, false)
+	}
+	if err != nil {
+		return err
+	}
+	err = mw.transcribe.player.Play()
+	if err != nil {
+		return err
+	}
+	// TODO: send a chan to stop last updateslide
+	go mw.UpdateSlide()
+	return nil
 }
 
 // jumpBack jumps back in position.
