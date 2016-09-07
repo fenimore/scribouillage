@@ -14,7 +14,7 @@
 package main
 
 import (
-	"bytes"
+	"encoding/binary"
 	"fmt"
 	"github.com/zserge/hid"
 	"time"
@@ -30,11 +30,11 @@ import (
 // 7. 0600 - Middle + Right Pressed
 // 8. 0700 - All Pedals Pressed
 
-var (
-	left    = []byte{1, 0} // "\x01\x00"
-	right   = []byte{4, 0}
-	middle  = []byte{2, 0}
-	release = []byte{0, 0}
+const (
+	left    = 1
+	right   = 4
+	middle  = 2
+	release = 0
 )
 
 func main() {
@@ -60,15 +60,16 @@ func main() {
 		buf, err := dev.Read(-1, 1*time.Second)
 		if err == nil {
 			// otherwise, get err 'connection timed out'
-			if bytes.Equal(left, buf) {
+			switch binary.LittleEndian.Uint16(buf) {
+			case left:
 				fmt.Println("Press: Left")
-			} else if bytes.Equal(right, buf) {
+			case right:
 				fmt.Println("Press: Right")
-			} else if bytes.Equal(middle, buf) {
+			case middle:
 				fmt.Println("Press: Middle")
-			} else if bytes.Equal(release, buf) {
+			case release:
 				fmt.Println("Release")
-			} else {
+			default:
 				// 0600, 0300, 0700 etc
 				fmt.Println("Other Input")
 			}
