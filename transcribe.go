@@ -32,40 +32,18 @@ type MainWindow struct {
 	box    *ui.Box
 	slider *ui.Slider
 	// Radio for jump value
+	transcribe *Transcriber
 }
 
 func NewTranscriber() *Transcriber {
-	t := new(Transcriber)
+
+	t := Transcriber{}
 
 	// VLC data
 	t.jump = 5000
 	t.recording = "https://www.freesound.org/data/previews/258/258397_450294-lq.mp3"
-	err := vlc.Init("--no-video", "--quiet")
-	if err != nil {
-		fmt.Println("VLC init Error: %s\n", err)
-	}
-	defer vlc.Release()
-	t.player, err = vlc.NewPlayer()
-	if err != nil {
-		fmt.Printf("VLC init Error: [%s]\nAre you using libvlc 2.x?\n", err)
-		return nil
-	}
-	defer func() {
-		t.player.Stop()
-		t.player.Release()
-	}()
-	// SetMedia for Player
-	local := !strings.HasPrefix(t.recording, "http")
-	if local {
-		err = t.player.SetMedia(t.recording, true)
-	} else {
-		err = t.player.SetMedia(t.recording, false)
-	}
-	if err != nil {
-		fmt.Println("Set Media Path Error: %s\n", err)
-		return nil
-	}
-	return t
+
+	return &t
 }
 
 func NewMainWindow() *MainWindow {
@@ -80,7 +58,12 @@ func NewMainWindow() *MainWindow {
 	})
 	w.bPause = ui.NewButton("Pause")
 	w.bPause.OnClicked(func(*ui.Button) {
-		//t.player.Pause(t.player.IsPlaying())
+		if w.transcribe.player.IsPlaying() {
+			w.bPause.SetText("Pause")
+		} else {
+			w.bPause.SetText("Play")
+		}
+		w.transcribe.player.Pause(w.transcribe.player.IsPlaying())
 	})
 	w.status = ui.NewLabel("")
 	w.box = ui.NewVerticalBox()
@@ -100,18 +83,49 @@ func NewMainWindow() *MainWindow {
 }
 
 func main() {
-	err := ui.Main(func() {
-		mw := NewMainWindow()
-		mw.win.Show()
-		t := NewTranscriber()
+	t := NewTranscriber()
+	err := vlc.Init("--no-video", "--quiet")
+	if err != nil {
+		fmt.Println("VLC init Error: %s\n", err)
+	}
+	defer vlc.Release()
 
-		b := t.player.IsPlaying()
-		fmt.Println(b)
+	t.player, err = vlc.NewPlayer()
+	if err != nil {
+		fmt.Printf("VLC init Error: [%s]\nAre you using libvlc 2.x?\n", err)
+		return
+	}
+	defer func() {
+		t.player.Stop()
+		t.player.Release()
+	}()
+
+	// SetMedia for Player
+	local := !strings.HasPrefix(t.recording, "http")
+	if local {
+		err = t.player.SetMedia(t.recording, true)
+	} else {
+		err = t.player.SetMedia(t.recording, false)
+	}
+	if err != nil {
+		fmt.Println("Set Media Path Error: %s\n", err)
+		return
+	}
+
+	err = ui.Main(func() {
+		mw := NewMainWindow()
+		mw.transcribe = t
+		mw.win.Show()
+		err := mw.transcribe.player.Play()
+		if err != nil {
+			fmt.Println(err)
+		}
 
 	})
 	if err != nil {
 		fmt.Println(err)
 	}
+
 }
 
 // jumpBack jumps back in position.
