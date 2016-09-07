@@ -14,6 +14,7 @@ import (
 	"github.com/andlabs/ui"
 	vlc "github.com/polypmer/libvlc-go"
 	"strings"
+	"sync"
 )
 
 type Transcriber struct {
@@ -34,6 +35,8 @@ type MainWindow struct {
 	// Radio for jump value
 	transcribe *Transcriber
 	stopCh     chan bool
+	stop       bool
+	wg         sync.WaitGroup
 }
 
 func NewTranscriber() *Transcriber {
@@ -54,6 +57,7 @@ func NewMainWindow() *MainWindow {
 	w.bStart = ui.NewButton("Start")
 	w.bStart.OnClicked(func(*ui.Button) {
 		// Do nothign
+		w.stop = true
 		err := w.Start("https://www.freesound.org/data/previews/258/258397_450294-lq.mp3")
 		if err != nil {
 			fmt.Println(err)
@@ -81,7 +85,7 @@ func NewMainWindow() *MainWindow {
 		ui.Quit()
 		return true
 	})
-
+	w.stop = false
 	w.stopCh = make(chan bool)
 
 	return w
@@ -104,6 +108,7 @@ func main() {
 		t.player.Stop()
 		t.player.Release()
 	}()
+
 	err = ui.Main(func() {
 		mw := NewMainWindow()
 		mw.transcribe = t
@@ -120,11 +125,15 @@ func main() {
 
 func (mw *MainWindow) UpdateSlide() error {
 	for {
+		if mw.stop == true {
+			break
+		}
 		state, err := mw.transcribe.player.GetState()
 		if err != nil {
 			fmt.Println("Get State Error: ", err)
 			fmt.Println("Recording is not connected")
 			return err
+			//break
 		}
 		if state != 4 && state != 3 {
 			continue
@@ -136,12 +145,19 @@ func (mw *MainWindow) UpdateSlide() error {
 		percent := pos * 100
 		mw.slider.SetValue(int(percent))
 	}
+	mw.stop = false
+	mw.wg.Done()
+
 	return nil
 }
 
 func (mw *MainWindow) Start(path string) error {
 	// SetMedia for Player
 	var err error
+	mw.wg.Wait()
+	fmt.Println("No longer waiting")
+	mw.wg.Add(1)
+	mw.stop = false
 	mw.transcribe.recording = path
 	local := !strings.HasPrefix(mw.transcribe.recording, "http")
 	if local {
