@@ -33,6 +33,7 @@ type MainWindow struct {
 	slider *ui.Slider
 	// Radio for jump value
 	transcribe *Transcriber
+	stopCh     chan bool
 }
 
 func NewTranscriber() *Transcriber {
@@ -80,6 +81,8 @@ func NewMainWindow() *MainWindow {
 		ui.Quit()
 		return true
 	})
+
+	w.stopCh = make(chan bool)
 
 	return w
 }
