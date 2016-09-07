@@ -1,16 +1,7 @@
 // Public Domain | Fenimore Love
 //
-// Inspired by Python2 driver https://ubuntuforums.org/
-//                           showthread.php?t=2232673
-//
 // Also, some info about Infinity pedal: Vendor id = 05f3
 //                                       Product id = 00ff
-//
-// My infinity pedal outputs to a file in /dev/usb hiddev0
-// This, however, could change (to say, hiddev1?)
-//
-// Like the python code, use the linux program xte to simulate
-// keystrokes. For archlinux, this is found in the xautomation package.
 package main
 
 import (
@@ -21,6 +12,7 @@ import (
 )
 
 // Driver takes Infinity Foot Pedal and Input reads four different reports:
+// Reports are given in two byte slices, such as \x02\x00
 // 1. 0000 - Pedal released
 // 2. 0100 - Left Pedal Pressed
 // 3. 0200 - Middle Pedal Pressed
@@ -38,13 +30,11 @@ const (
 )
 
 func main() {
-
-	//REL_PED, _ = hex.DecodeString("0000")
-	target := "05f3:00ff:0120"
+	target := "05f3:00ff"
 	var dev hid.Device
 	hid.UsbWalk(func(device hid.Device) {
 		info := device.Info()
-		d := fmt.Sprintf("%04x:%04x:%04x", info.Vendor, info.Product, info.Revision)
+		d := fmt.Sprintf("%04x:%04x", info.Vendor, info.Product)
 		if d == target {
 			dev = device
 		}
