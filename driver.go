@@ -30,13 +30,13 @@ const (
 )
 
 func main() {
-	target := "05f3:00ff"
-	var dev hid.Device
-	hid.UsbWalk(func(device hid.Device) {
-		info := device.Info()
+	target := "05f3:00ff" // Vendor and Product ID for Infinity FootPedal
+	var device hid.Device
+	hid.UsbWalk(func(dev hid.Device) {
+		info := dev.Info()
 		d := fmt.Sprintf("%04x:%04x", info.Vendor, info.Product)
 		if d == target {
-			dev = device
+			device = dev
 		}
 	})
 	err := dev.Open()
