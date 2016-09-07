@@ -15,13 +15,31 @@ package main
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"github.com/zserge/hid"
 	"time"
 )
 
+// Driver takes Infinity Foot Pedal and Input reads four different reports:
+// 1. 0000 - Pedal released
+// 2. 0100 - Left Pedal Pressed
+// 3. 0200 - Middle Pedal Pressed
+// 4. 0300 - Left + Middle Pressed
+// 5. 0400 - Right Pedal Pressed
+// 6. 0500 - Left + Right Pressed
+// 7. 0600 - Middle + Right Pressed
+// 8. 0700 - All Pedals Pressed
+
+var (
+	left    = []byte{1, 0} // "\x01\x00"
+	right   = []byte{4, 0}
+	middle  = []byte{2, 0}
+	release = []byte{0, 0}
+)
+
 func main() {
+
+	//REL_PED, _ = hex.DecodeString("0000")
 	target := "05f3:00ff:0120"
 	var dev hid.Device
 	hid.UsbWalk(func(device hid.Device) {
@@ -31,29 +49,28 @@ func main() {
 			dev = device
 		}
 	})
-	fmt.Println(dev)
 	err := dev.Open()
+	// logs driver disconnect failed: -1 no data available ??
 	if err != nil {
 		fmt.Printf("Open Error: %s, Check Privileges\n", err)
 	}
 	defer dev.Close()
 
-	if report, err := dev.HIDReport(); err != nil {
-		fmt.Println("HID report error:", err)
-		return
-	} else {
-		fmt.Println("HID report", hex.EncodeToString(report))
-	}
-
 	for {
-		if buf, err := dev.Read(-1, 1*time.Second); err == nil {
-			fmt.Println("Input report:  ", hex.EncodeToString(buf))
-			decoded, err := hex.DecodeString("0000")
-			if err != nil {
-				fmt.Println(err)
-			}
-			if bytes.Equal(decoded, buf) {
-				fmt.Println("Yes")
+		buf, err := dev.Read(-1, 1*time.Second)
+		if err == nil {
+			// otherwise, get err 'connection timed out'
+			if bytes.Equal(left, buf) {
+				fmt.Println("Press: Left")
+			} else if bytes.Equal(right, buf) {
+				fmt.Println("Press: Right")
+			} else if bytes.Equal(middle, buf) {
+				fmt.Println("Press: Middle")
+			} else if bytes.Equal(release, buf) {
+				fmt.Println("Release")
+			} else {
+				// 0600, 0300, 0700 etc
+				fmt.Println("Other Input")
 			}
 		}
 	}
