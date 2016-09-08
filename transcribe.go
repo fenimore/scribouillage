@@ -68,6 +68,7 @@ func NewMainWindow() *MainWindow {
 	})
 	w.bPause = ui.NewButton("Pause")
 	w.bPause.OnClicked(func(*ui.Button) {
+		fmt.Println(w.TotalSeconds(), w.Seconds())
 		if !w.transcribe.player.IsPlaying() {
 			w.bPause.SetText("Pause")
 		} else {
@@ -190,6 +191,23 @@ func (mw *MainWindow) Start(path string) error {
 	// TODO: send a chan to stop last updateslide
 	go mw.UpdateSlide()
 	return nil
+}
+
+// Seconds returns an int of seconds total for media.
+func (mw *MainWindow) TotalSeconds() int {
+	seconds, err := mw.transcribe.player.MediaLength()
+	if err != nil {
+		fmt.Println(err)
+	}
+	return seconds / 1000
+}
+
+func (mw *MainWindow) Seconds() int {
+	seconds, err := mw.transcribe.player.MediaTime()
+	if err != nil {
+		fmt.Println(err)
+	}
+	return seconds / 1000
 }
 
 // jumpBack jumps back in position.
