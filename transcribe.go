@@ -60,7 +60,8 @@ func NewMainWindow() *MainWindow {
 		// So pass true to the stop chan
 		// When I want to end the UpdateSlider goroutine.
 		w.stopCh <- true
-		err := w.Start("https://www.freesound.org/data/previews/258/258397_450294-lq.mp3")
+		//err := w.Start("https://www.freesound.org/data/previews/258/258397_450294-lq.mp3")
+		err := w.Start("/home/fen/everyday.mp3")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -125,13 +126,19 @@ func main() {
 }
 
 func (mw *MainWindow) UpdateSlide() {
-	millis, err := mw.transcribe.player.MediaTime()
-	if err != nil {
-		fmt.Println(err)
+	for {
+		millis, err := mw.transcribe.player.MediaTime()
+		if err != nil {
+			fmt.Println(err)
+		}
+		if !(millis > 0) {
+			continue
+		}
+		fmt.Println(millis)
+		seconds := millis / 1000
+		fmt.Println(seconds)
+		break
 	}
-	fmt.Println(millis)
-	seconds := millis / 1000
-	fmt.Println(seconds)
 	//mw.slider = ui.NewSlider(0, seconds)
 UpLoop:
 	for {
@@ -143,7 +150,6 @@ UpLoop:
 				fmt.Println("Recording is not connected")
 				break UpLoop
 			}
-			fmt.Println(state)
 			if state != 4 && state != 3 {
 				continue UpLoop
 			}
