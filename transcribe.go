@@ -24,14 +24,15 @@ type Transcriber struct {
 }
 
 type MainWindow struct {
-	win    *ui.Window
-	picker *ui.Entry
-	bStart *ui.Button
-	bPause *ui.Button
-	bReset *ui.Button
-	status *ui.Label
-	box    *ui.Box
-	slider *ui.Slider
+	win      *ui.Window
+	picker   *ui.Entry
+	bStart   *ui.Button
+	bPause   *ui.Button
+	bReset   *ui.Button
+	lTotal   *ui.Label
+	lCurrent *ui.Label
+	box      *ui.Box
+	slider   *ui.Slider
 	// Radio for jump value
 	transcribe *Transcriber
 	stopCh     chan bool
@@ -78,11 +79,13 @@ func NewMainWindow() *MainWindow {
 		w.transcribe.player.Pause(
 			w.transcribe.player.IsPlaying())
 	})
-	w.status = ui.NewLabel("")
+	w.lTotal = ui.NewLabel("")
+	w.lCurrent = ui.NewLabel("")
 	w.box = ui.NewVerticalBox()
 	w.box.Append(ui.NewLabel("Recording Path"), false)
 	w.box.Append(w.picker, false)
-	w.box.Append(w.status, false)
+	w.box.Append(w.lCurrent, false)
+	w.box.Append(w.lTotal, false)
 	w.box.Append(w.slider, false)
 	w.box.Append(w.bStart, false)
 	w.box.Append(w.bPause, false)
@@ -128,12 +131,14 @@ func main() {
 	}
 }
 
+// UpdateSlide, run as goroutine, updates GUI slide.
+// To cancel, pass true into MainWindow.stopCh chan.
 func (mw *MainWindow) UpdateSlide() {
 	for {
-		pos, err := mw.transcribe.player.MediaTime()
-		if err != nil {
-			fmt.Println(err)
-		}
+		//		plac, err := mw.transcribe.player.MediaTime()
+		//		if err != nil {
+		//			fmt.Println(err)
+		//		}
 		leng, err := mw.transcribe.player.MediaLength()
 		if err != nil {
 			fmt.Println(err)
@@ -141,8 +146,8 @@ func (mw *MainWindow) UpdateSlide() {
 		if !(leng > 0) {
 			continue
 		}
-		mw.status.SetText(mw.Minutes(pos) + " " +
-			mw.Minutes(leng))
+		//mw.lCurrent.SetText(mw.Minutes(plac))
+		mw.lTotal.SetText(" " + mw.Minutes(leng))
 		break
 	}
 	// set length to slider scale
@@ -165,6 +170,13 @@ UpLoop:
 				fmt.Println(err)
 				break UpLoop
 			}
+			//t, err := mw.transcribe.player.MediaTime()
+			//if err != nil {
+			//	fmt.Println(err)
+			//break UpLoop
+			//}// This breaks it?!??!
+			//fmt.Println(mw.Minutes(t))
+			//mw.lCurrent.SetText(mw.Minutes(t))
 			percent := pos * 100
 			mw.slider.SetValue(int(percent))
 		case <-mw.stopCh:
@@ -174,6 +186,10 @@ UpLoop:
 	mw.wg.Done()
 }
 
+// Start sets media to path and plays recording.
+// There is a sync lock because this method calls
+// UpdateSlide, and only one of these goroutines
+// should be running at a time.
 func (mw *MainWindow) Start(path string) error {
 	// SetMedia for Player
 	var err error
