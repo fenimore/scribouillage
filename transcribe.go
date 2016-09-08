@@ -17,13 +17,17 @@ import (
 	"sync"
 )
 
+// The transcriber, part of the MainWindow
+// keeps track of the recording to be transcribed.
 type Transcriber struct {
 	jump      int
 	recording string
 	player    *vlc.Player
 }
 
+// MainWindow is the main GUI window
 type MainWindow struct {
+	// TODO add number picker or radiobox for jump.
 	win      *ui.Window
 	picker   *ui.Entry
 	bStart   *ui.Button
@@ -94,22 +98,24 @@ func NewMainWindow() *MainWindow {
 	})
 	w.lTotal = ui.NewLabel("")
 	w.lCurrent = ui.NewLabel("")
+	// Boxes goodies
 	w.box = ui.NewVerticalBox()
 	w.controls = ui.NewHorizontalBox()
 	w.location = ui.NewHorizontalBox()
 	w.seeks = ui.NewHorizontalBox()
 	// File Picker
 	w.box.Append(ui.NewLabel("Path to recording:"), false)
-	w.box.Append(w.picker, false)
+	w.controls.Append(w.picker, true)
+	w.controls.Append(w.bStart, true)
+	w.box.Append(w.controls, false)
+	//w.box.Append(ui.NewHorizontalSeparator(), false)//dontwork
 	// Location and slider
 	w.location.Append(w.lCurrent, false)
 	w.location.Append(w.lTotal, false)
 	w.box.Append(w.location, false)
 	w.box.Append(w.slider, false)
 	// Start and Play controls
-	w.controls.Append(w.bStart, true)
-	w.controls.Append(w.bPause, true)
-	w.box.Append(w.controls, false)
+	w.box.Append(w.bPause, false)
 	// Seek navigation
 	w.seeks.Append(w.bBack, true)
 	w.seeks.Append(w.bForw, true)
