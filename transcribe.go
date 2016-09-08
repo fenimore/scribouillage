@@ -35,8 +35,9 @@ type MainWindow struct {
 	// Radio for jump value
 	transcribe *Transcriber
 	stopCh     chan bool
-	stop       bool
-	wg         sync.WaitGroup
+	//stoppedCh  chan bool
+	//stop       bool
+	wg sync.WaitGroup
 }
 
 func NewTranscriber() *Transcriber {
@@ -56,7 +57,9 @@ func NewMainWindow() *MainWindow {
 	w.slider = ui.NewSlider(0, 100)
 	w.bStart = ui.NewButton("Start")
 	w.bStart.OnClicked(func(*ui.Button) {
-		// Do nothign
+		// So pass true to the stop chan
+		// When I want to end the UpdateSlider goroutine.
+		w.stopCh <- true
 		err := w.Start("https://www.freesound.org/data/previews/258/258397_450294-lq.mp3")
 		if err != nil {
 			fmt.Println(err)
@@ -85,7 +88,7 @@ func NewMainWindow() *MainWindow {
 		return true
 	})
 	w.stopCh = make(chan bool)
-
+	//w.stoppedCh = make(chan struct{})
 	return w
 }
 
@@ -122,34 +125,41 @@ func main() {
 }
 
 func (mw *MainWindow) UpdateSlide() {
+UpLoop:
 	for {
-		state, err := mw.transcribe.player.GetState()
-		if err != nil {
-			fmt.Println("Get State Error: ", err)
-			fmt.Println("Recording is not connected")
-			fmt.Println(mw.transcribe.player.WillPlay())
-			break
+		select {
+		default:
+			state, err := mw.transcribe.player.GetState()
+			if err != nil {
+				fmt.Println("Get State Error: ", err)
+				fmt.Println("Recording is not connected")
+				break UpLoop
+			}
+			if state != 4 && state != 3 {
+				continue UpLoop
+			}
+			pos, err := mw.transcribe.player.GetPosition()
+			if err != nil {
+				fmt.Println(err)
+				break UpLoop
+			}
+			percent := pos * 100
+			mw.slider.SetValue(int(percent))
+		case <-mw.stopCh:
+			break UpLoop
 		}
-		if state != 4 && state != 3 {
-			continue
-		}
-		pos, err := mw.transcribe.player.GetPosition()
-		if err != nil {
-			fmt.Println(err)
-			break
-		}
-		percent := pos * 100
-		mw.slider.SetValue(int(percent))
 	}
-	//mw.wg.Done()
+	mw.wg.Done()
 }
+
+type Stop struct{}
 
 func (mw *MainWindow) Start(path string) error {
 	// SetMedia for Player
 	var err error
-	//mw.wg.Wait()
-	//mw.wg.Add(1)
-	mw.stop = false
+
+	mw.wg.Wait()
+	mw.wg.Add(1)
 	mw.transcribe.recording = path
 	local := !strings.HasPrefix(mw.transcribe.recording, "http")
 	if local {
