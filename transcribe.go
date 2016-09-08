@@ -127,16 +127,16 @@ func main() {
 
 func (mw *MainWindow) UpdateSlide() {
 	for {
-		millis, err := mw.transcribe.player.MediaTime()
+		seconds, err := mw.transcribe.player.MediaTime()
 		if err != nil {
 			fmt.Println(err)
 		}
-		if !(millis > 0) {
+		if !(seconds > 0) {
 			continue
 		}
-		fmt.Println(millis)
-		seconds := millis / 1000
 		fmt.Println(seconds)
+		//seconds := millis * 1000
+		//fmt.Println(seconds)
 		break
 	}
 	//mw.slider = ui.NewSlider(0, seconds)
