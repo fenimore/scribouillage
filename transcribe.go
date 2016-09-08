@@ -52,7 +52,7 @@ func NewTranscriber() *Transcriber {
 func NewMainWindow() *MainWindow {
 	w := new(MainWindow)
 	// User Interface
-	w.win = ui.NewWindow("Transcriber", 400, 400, false)
+	w.win = ui.NewWindow("Transcriber", 400, 240, false)
 	w.picker = ui.NewEntry()
 	w.slider = ui.NewSlider(0, 100)
 	w.bStart = ui.NewButton("Start")
