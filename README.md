@@ -1,9 +1,7 @@
-# Transcribe
+# Transcribe || Scribouillage
 
-So this works for taking an **infinity foot pedal** (or others?). It defaults with maps to the buttons Previous, Play, and Next. ~~This is for Linux and relies on a Linux utility `xte` (for Arch users, check out the xautomation package).~~ 
+Scribouillage is **transcription** software intended for use on Linux, using **libvlc** and the **Infinity Foot Pedal**. 
 
-This `driver.go` in the Public Domain. ~~It's a pedal input mapper using `xte`.~~ `transcribe.go` is licensed under GPLv3. 
+Because the footpedal doesn't come with a Linux driver out of the box, I'm using [zserge](https://github.com/zserge)'s **HID** driver in order to access the device somewhere in `/dev/bus/usb/00?/???`. Therefore, one needs reading permissions on that file in order for the driver to work.
 
-zserge's HID driver accesses the device somewhere in `/dev/bus/usb/00?/???`, one needs reading permissions in order for the 'driver' to work.
-
-The `transcribe.go` package is a (quite doomed) work in progress, using the `libvlc` bindings to play a recording; the footpedal then jumps forward and back according to user settings.
+The `transcribe.go` package is a work in progress, it uses [libvlc](https://github.com/adrg/libvlc-go) bindings to play a recording and the footpedal then jumps forward and back. The GUI uses andlabs `ui` package, there aren't too many options for GUI and golang, and `ui` isn't *there* yet.
