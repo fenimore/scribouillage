@@ -62,7 +62,7 @@ func NewTranscriber() *Transcriber {
 func NewMainWindow() *MainWindow {
 	w := new(MainWindow)
 	// User Interface
-	w.win = ui.NewWindow("Transcriber", 500, 200, false)
+	w.win = ui.NewWindow("Scribouillage", 500, 200, true)
 	w.picker = ui.NewEntry()
 	w.picker.SetText("https://www.freesound.org/data/previews/" +
 		"258/258397_450294-lq.mp3")
@@ -91,10 +91,20 @@ func NewMainWindow() *MainWindow {
 	w.bForw = ui.NewButton("Forward >")
 	w.bForw.OnClicked(func(*ui.Button) {
 		w.transcribe.jumpForward()
+		t, err := w.transcribe.player.MediaTime()
+		if err != nil {
+			fmt.Println(err)
+		}
+		w.lCurrent.SetText(w.Minutes(t))
 	})
 	w.bBack = ui.NewButton("< Back")
 	w.bBack.OnClicked(func(*ui.Button) {
 		w.transcribe.jumpBack()
+		t, err := w.transcribe.player.MediaTime()
+		if err != nil {
+			fmt.Println(err)
+		}
+		w.lCurrent.SetText(w.Minutes(t))
 	})
 	w.lTotal = ui.NewLabel("")
 	w.lCurrent = ui.NewLabel("")
@@ -159,6 +169,8 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
+		// TODO: Start Foot Pedal Driver here?
+		// go footpedal?
 	})
 	if err != nil {
 		fmt.Println(err)
@@ -196,7 +208,7 @@ UpLoop:
 				fmt.Println("Recording is not connected")
 				break UpLoop
 			}
-			if state != 4 && state != 3 {
+			if state != 4 && state != 3 && state != 6 {
 				continue UpLoop
 			}
 			pos, err := mw.transcribe.player.MediaPosition()
