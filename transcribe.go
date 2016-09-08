@@ -61,7 +61,8 @@ func NewMainWindow() *MainWindow {
 		// When I want to end the UpdateSlider goroutine.
 		w.stopCh <- true
 		//err := w.Start("https://www.freesound.org/data/previews/258/258397_450294-lq.mp3")
-		err := w.Start("/home/fen/everyday.mp3")
+		//err := w.Start("/home/fen/everyday.mp3")
+		err := w.Start(w.picker.Text())
 		if err != nil {
 			fmt.Println(err)
 		}
