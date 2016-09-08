@@ -70,22 +70,22 @@ func NewMainWindow() *MainWindow {
 	})
 	w.bPause = ui.NewButton("Pause")
 	w.bPause.OnClicked(func(*ui.Button) {
-		fmt.Println(w.TotalSeconds(), w.Seconds())
 		if !w.transcribe.player.IsPlaying() {
 			w.bPause.SetText("Pause")
 		} else {
 			w.bPause.SetText("Play")
 		}
-		w.transcribe.player.Pause(w.transcribe.player.IsPlaying())
+		w.transcribe.player.Pause(
+			w.transcribe.player.IsPlaying())
 	})
 	w.status = ui.NewLabel("")
 	w.box = ui.NewVerticalBox()
 	w.box.Append(ui.NewLabel("Recording Path"), false)
 	w.box.Append(w.picker, false)
+	w.box.Append(w.status, false)
 	w.box.Append(w.slider, false)
 	w.box.Append(w.bStart, false)
 	w.box.Append(w.bPause, false)
-	w.box.Append(w.status, false)
 	w.win.SetChild(w.box)
 	w.win.OnClosing(func(*ui.Window) bool {
 		ui.Quit()
@@ -130,19 +130,23 @@ func main() {
 
 func (mw *MainWindow) UpdateSlide() {
 	for {
-		seconds, err := mw.transcribe.player.MediaTime()
+		pos, err := mw.transcribe.player.MediaTime()
 		if err != nil {
 			fmt.Println(err)
 		}
-		if !(seconds > 0) {
+		leng, err := mw.transcribe.player.MediaLength()
+		if err != nil {
+			fmt.Println(err)
+		}
+		if !(leng > 0) {
 			continue
 		}
-		fmt.Println(seconds)
-		//seconds := millis * 1000
-		//fmt.Println(seconds)
+		mw.status.SetText(mw.Minutes(pos) + " " +
+			mw.Minutes(leng))
 		break
 	}
-	//mw.slider = ui.NewSlider(0, seconds)
+	// set length to slider scale
+	//mw.slider = ui.NewSlider(0, length)
 UpLoop:
 	for {
 		select {
@@ -179,9 +183,11 @@ func (mw *MainWindow) Start(path string) error {
 	mw.transcribe.recording = path
 	local := !strings.HasPrefix(mw.transcribe.recording, "http")
 	if local {
-		err = mw.transcribe.player.SetMedia(mw.transcribe.recording, true)
+		err = mw.transcribe.player.SetMedia(
+			mw.transcribe.recording, true)
 	} else {
-		err = mw.transcribe.player.SetMedia(mw.transcribe.recording, false)
+		err = mw.transcribe.player.SetMedia(
+			mw.transcribe.recording, false)
 	}
 	if err != nil {
 		return err
@@ -192,24 +198,14 @@ func (mw *MainWindow) Start(path string) error {
 	}
 	// TODO: send a chan to stop last updateslide
 	go mw.UpdateSlide()
+
 	return nil
 }
 
-// Seconds returns an int of seconds total for media.
-func (mw *MainWindow) TotalSeconds() int {
-	seconds, err := mw.transcribe.player.MediaLength()
-	if err != nil {
-		fmt.Println(err)
-	}
-	return seconds / 1000
-}
-
-func (mw *MainWindow) Seconds() int {
-	seconds, err := mw.transcribe.player.MediaTime()
-	if err != nil {
-		fmt.Println(err)
-	}
-	return seconds / 1000
+// Converts milliseconds to Minutes and returns string.
+func (mw *MainWindow) Minutes(length int) string {
+	s := length / 1000
+	return fmt.Sprintf("%d:%d", s/60, s%60)
 }
 
 // jumpBack jumps back in position.
