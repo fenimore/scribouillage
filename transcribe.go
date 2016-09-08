@@ -54,14 +54,15 @@ func NewMainWindow() *MainWindow {
 	// User Interface
 	w.win = ui.NewWindow("Transcriber", 400, 240, false)
 	w.picker = ui.NewEntry()
+	w.picker.SetText("https://www.freesound.org/data/previews/" +
+		"258/258397_450294-lq.mp3")
 	w.slider = ui.NewSlider(0, 100)
 	w.bStart = ui.NewButton("Start")
 	w.bStart.OnClicked(func(*ui.Button) {
 		// So pass true to the stop chan
 		// When I want to end the UpdateSlider goroutine.
 		w.stopCh <- true
-		//err := w.Start("https://www.freesound.org/data/previews/258/258397_450294-lq.mp3")
-		//err := w.Start("/home/fen/everyday.mp3")
+
 		err := w.Start(w.picker.Text())
 		if err != nil {
 			fmt.Println(err)
