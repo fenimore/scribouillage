@@ -125,6 +125,24 @@ func main() {
 }
 
 func (mw *MainWindow) UpdateSlide() {
+	for {
+		state, err := mw.transcribe.player.GetState()
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+		if state != 0 || state != 1 {
+			break
+		}
+	}
+	millis, err := mw.transcribe.player.GetTime()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(millis)
+	seconds := millis / 1000
+	fmt.Println(seconds)
+	//mw.slider = ui.NewSlider(0, seconds)
 UpLoop:
 	for {
 		select {
