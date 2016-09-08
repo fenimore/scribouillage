@@ -123,10 +123,6 @@ func main() {
 
 func (mw *MainWindow) UpdateSlide() {
 	for {
-		if !mw.transcribe.player.WillPlay() {
-			fmt.Println("Won't play")
-			break
-		}
 		state, err := mw.transcribe.player.GetState()
 		if err != nil {
 			fmt.Println("Get State Error: ", err)
