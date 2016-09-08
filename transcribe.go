@@ -125,17 +125,7 @@ func main() {
 }
 
 func (mw *MainWindow) UpdateSlide() {
-	for {
-		state, err := mw.transcribe.player.GetState()
-		if err != nil {
-			fmt.Println(err)
-			break
-		}
-		if state != 0 || state != 1 {
-			break
-		}
-	}
-	millis, err := mw.transcribe.player.GetTime()
+	millis, err := mw.transcribe.player.MediaTime()
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -147,16 +137,17 @@ UpLoop:
 	for {
 		select {
 		default:
-			state, err := mw.transcribe.player.GetState()
+			state, err := mw.transcribe.player.MediaState()
 			if err != nil {
 				fmt.Println("Get State Error: ", err)
 				fmt.Println("Recording is not connected")
 				break UpLoop
 			}
+			fmt.Println(state)
 			if state != 4 && state != 3 {
 				continue UpLoop
 			}
-			pos, err := mw.transcribe.player.GetPosition()
+			pos, err := mw.transcribe.player.MediaPosition()
 			if err != nil {
 				fmt.Println(err)
 				break UpLoop
@@ -170,12 +161,10 @@ UpLoop:
 	mw.wg.Done()
 }
 
-type Stop struct{}
-
 func (mw *MainWindow) Start(path string) error {
 	// SetMedia for Player
 	var err error
-
+	// Don't 'start' until the goroutine updating GUI has stopped
 	mw.wg.Wait()
 	mw.wg.Add(1)
 	mw.transcribe.recording = path
@@ -200,21 +189,21 @@ func (mw *MainWindow) Start(path string) error {
 // jumpBack jumps back in position.
 // TODO: modify jump distance.
 func (t *Transcriber) jumpBack() {
-	pos, err := t.player.GetTime()
+	pos, err := t.player.MediaTime()
 	if err != nil {
 		fmt.Println("Jump Back: ", err)
 	}
 	newPosition := pos - t.jump
-	t.player.SetTime(newPosition)
+	t.player.SetMediaTime(newPosition)
 }
 
 // jumpForward jumps forward position.
 // TODO: modify jump distance.
 func (t *Transcriber) jumpForward() {
-	pos, err := t.player.GetTime()
+	pos, err := t.player.MediaTime()
 	if err != nil {
 		fmt.Println("Jump Forward: ", err)
 	}
 	newPosition := pos + t.jump
-	t.player.SetTime(newPosition)
+	t.player.SetMediaTime(newPosition)
 }
