@@ -29,9 +29,14 @@ type MainWindow struct {
 	bStart   *ui.Button
 	bPause   *ui.Button
 	bReset   *ui.Button
+	bForw    *ui.Button
+	bBack    *ui.Button
 	lTotal   *ui.Label
 	lCurrent *ui.Label
 	box      *ui.Box
+	controls *ui.Box
+	location *ui.Box
+	seeks    *ui.Box
 	slider   *ui.Slider
 	// Radio for jump value
 	transcribe *Transcriber
@@ -53,7 +58,7 @@ func NewTranscriber() *Transcriber {
 func NewMainWindow() *MainWindow {
 	w := new(MainWindow)
 	// User Interface
-	w.win = ui.NewWindow("Transcriber", 400, 240, false)
+	w.win = ui.NewWindow("Transcriber", 500, 200, false)
 	w.picker = ui.NewEntry()
 	w.picker.SetText("https://www.freesound.org/data/previews/" +
 		"258/258397_450294-lq.mp3")
@@ -79,17 +84,40 @@ func NewMainWindow() *MainWindow {
 		w.transcribe.player.Pause(
 			w.transcribe.player.IsPlaying())
 	})
+	w.bForw = ui.NewButton("Forward >")
+	w.bForw.OnClicked(func(*ui.Button) {
+		w.transcribe.jumpForward()
+	})
+	w.bBack = ui.NewButton("< Back")
+	w.bBack.OnClicked(func(*ui.Button) {
+		w.transcribe.jumpBack()
+	})
 	w.lTotal = ui.NewLabel("")
 	w.lCurrent = ui.NewLabel("")
 	w.box = ui.NewVerticalBox()
-	w.box.Append(ui.NewLabel("Recording Path"), false)
+	w.controls = ui.NewHorizontalBox()
+	w.location = ui.NewHorizontalBox()
+	w.seeks = ui.NewHorizontalBox()
+	// File Picker
+	w.box.Append(ui.NewLabel("Path to recording:"), false)
 	w.box.Append(w.picker, false)
-	w.box.Append(w.lCurrent, false)
-	w.box.Append(w.lTotal, false)
+	// Location and slider
+	w.location.Append(w.lCurrent, false)
+	w.location.Append(w.lTotal, false)
+	w.box.Append(w.location, false)
 	w.box.Append(w.slider, false)
-	w.box.Append(w.bStart, false)
-	w.box.Append(w.bPause, false)
+	// Start and Play controls
+	w.controls.Append(w.bStart, true)
+	w.controls.Append(w.bPause, true)
+	w.box.Append(w.controls, false)
+	// Seek navigation
+	w.seeks.Append(w.bBack, true)
+	w.seeks.Append(w.bForw, true)
+	w.box.Append(w.seeks, false)
+	// Set box to window
 	w.win.SetChild(w.box)
+	//w.win.SetChild(w.controls)
+
 	w.win.OnClosing(func(*ui.Window) bool {
 		ui.Quit()
 		return true
