@@ -317,7 +317,10 @@ func (mw *MainWindow) LaunchDriver() {
 			device = dev
 		}
 	})
-	fmt.Println(device)
+	if device == nil {
+		fmt.Println("Error: no device found.")
+		return
+	}
 	err := device.Open()
 	if err != nil {
 		fmt.Printf("Open Error: %s\nCheck Privileges\n", err)
