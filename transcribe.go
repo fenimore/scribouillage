@@ -10,12 +10,24 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"github.com/andlabs/ui"
 	vlc "github.com/polypmer/libvlc-go"
+	"github.com/zserge/hid"
 	"strings"
 	"sync"
+	"time"
 )
+
+const (
+	left    = 1
+	right   = 4
+	middle  = 2
+	release = 0
+)
+
+var pedalId string = "05f3:00ff" // Vendor and Product for Infinity Pedal
 
 // The transcriber, part of the MainWindow
 // keeps track of the recording to be transcribed.
@@ -169,6 +181,7 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
+		go mw.LaunchDriver()
 		// TODO: Start Foot Pedal Driver here?
 		// go footpedal?
 	})
@@ -272,6 +285,7 @@ func (mw *MainWindow) Minutes(length int) string {
 
 // jumpBack jumps back in position.
 // TODO: modify jump distance.
+// TODO: change name to Backward?
 func (t *Transcriber) jumpBack() {
 	pos, err := t.player.MediaTime()
 	if err != nil {
@@ -290,4 +304,47 @@ func (t *Transcriber) jumpForward() {
 	}
 	newPosition := pos + t.jump
 	t.player.SetMediaTime(newPosition)
+}
+
+// Find Pedal Device and Process Pedal Presses.
+// Launch in Goroutine, obs.
+func (mw *MainWindow) LaunchDriver() {
+	var device hid.Device
+	hid.UsbWalk(func(dev hid.Device) {
+		info := dev.Info()
+		d := fmt.Sprintf("%04x:%04x", info.Vendor, info.Product)
+		if d == pedalId {
+			device = dev
+		}
+	})
+	fmt.Println(device)
+	err := device.Open()
+	if err != nil {
+		fmt.Printf("Open Error: %s\nCheck Privileges\n", err)
+		return
+	}
+	defer device.Close()
+	for {
+		buf, err := device.Read(-1, 1*time.Second)
+		if err == nil {
+			// otherwise get err 'connection timed out'
+			switch binary.LittleEndian.Uint16(buf) {
+			case left:
+				mw.transcribe.jumpBack()
+			case right:
+				mw.transcribe.jumpForward()
+			case middle:
+				mw.transcribe.player.Pause(
+					mw.transcribe.player.IsPlaying())
+			case release:
+				// do nothing
+				// Unless only play when pressed
+				// is set.
+				continue
+			default:
+				// do nothing
+				continue
+			}
+		}
+	}
 }
