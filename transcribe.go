@@ -12,12 +12,13 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/andlabs/ui"
-	vlc "github.com/polypmer/libvlc-go"
-	"github.com/zserge/hid"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/andlabs/ui"
+	vlc "github.com/polypmer/libvlc-go"
+	"github.com/zserge/hid"
 )
 
 const (
@@ -29,7 +30,7 @@ const (
 
 var pedalId string = "05f3:00ff" // Vendor and Product for Infinity Pedal
 
-// The transcriber, part of the MainWindow
+// Transcriber, part of the MainWindow
 // keeps track of the recording to be transcribed.
 type Transcriber struct {
 	jump      int
@@ -62,6 +63,8 @@ type MainWindow struct {
 	wg sync.WaitGroup
 }
 
+// NewTranscriber returns pointer to Transciber.
+// jump is default 5 seconds.
 func NewTranscriber() *Transcriber {
 
 	t := Transcriber{}
@@ -71,6 +74,7 @@ func NewTranscriber() *Transcriber {
 	return &t
 }
 
+// NewMainWindow returns pointer to new GUI struct.
 func NewMainWindow() *MainWindow {
 	w := new(MainWindow)
 	// User Interface
@@ -159,7 +163,7 @@ func main() {
 	t := NewTranscriber()
 	err := vlc.Init("--no-video", "--quiet")
 	if err != nil {
-		fmt.Println("VLC init Error: %s\n", err)
+		fmt.Printf("VLC init Error: %s\n", err)
 	}
 	defer vlc.Release()
 
@@ -190,7 +194,7 @@ func main() {
 	}
 }
 
-// UpdateSlide, run as goroutine, updates GUI slide.
+// UpdateSlide run as goroutine, updates GUI slide.
 // To cancel, pass true into MainWindow.stopCh chan.
 func (mw *MainWindow) UpdateSlide() {
 	for {
@@ -277,7 +281,7 @@ func (mw *MainWindow) Start(path string) error {
 	return nil
 }
 
-// Converts milliseconds to Minutes and returns string.
+// Minutes converts milliseconds to Minutes and returns string.
 func (mw *MainWindow) Minutes(length int) string {
 	s := length / 1000
 	return fmt.Sprintf("%d:%d", s/60, s%60)
@@ -306,7 +310,7 @@ func (t *Transcriber) jumpForward() {
 	t.player.SetMediaTime(newPosition)
 }
 
-// Find Pedal Device and Process Pedal Presses.
+// LaunchDriver finds Pedal Device and Process Pedal Presses.
 // Launch in Goroutine, obs.
 func (mw *MainWindow) LaunchDriver() {
 	var device hid.Device

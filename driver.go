@@ -7,8 +7,9 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/zserge/hid"
 	"time"
+
+	"github.com/zserge/hid"
 )
 
 // Driver takes Infinity Foot Pedal and Input reads four different reports:
@@ -39,15 +40,15 @@ func main() {
 			device = dev
 		}
 	})
-	err := dev.Open()
+	err := device.Open()
 	// logs driver disconnect failed: -1 no data available ??
 	if err != nil {
 		fmt.Printf("Open Error: %s, Check Privileges\n", err)
 	}
-	defer dev.Close()
+	defer device.Close()
 
 	for {
-		buf, err := dev.Read(-1, 1*time.Second)
+		buf, err := device.Read(-1, 1*time.Second)
 		if err == nil {
 			// otherwise, get err 'connection timed out'
 			switch binary.LittleEndian.Uint16(buf) {
