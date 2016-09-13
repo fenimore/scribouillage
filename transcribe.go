@@ -30,7 +30,7 @@ const (
 
 var pedalId string = "05f3:00ff" // Vendor and Product for Infinity Pedal
 
-// Transcriber, part of the MainWindow
+// Transcriber part of the MainWindow
 // keeps track of the recording to be transcribed.
 type Transcriber struct {
 	jump      int

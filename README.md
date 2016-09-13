@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/polypmer/go-chess)](https://goreportcard.com/report/github.com/polypmer/scribouillage)
+
 # Transcribe || Scribouillage
 
 Scribouillage is **transcription** software intended for use on Linux, using **libvlc** and the **Infinity Foot Pedal**. 
